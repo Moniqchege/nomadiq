@@ -12,7 +12,7 @@ class BookingScreen extends StatelessWidget {
           children: [
             const Text('Book Your Tour'),
             const SizedBox(height: 4),
-            Image.asset('assets/images/logo.png', height: 20),
+            Image.asset('assets/logo/nomadiq_logo.jpg', height: 20),
           ],
         ),
         centerTitle: true,

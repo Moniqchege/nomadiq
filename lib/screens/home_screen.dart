@@ -1,46 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../models/destination.dart';
-import '../services/api_service.dart';
+import '../data/destinations_data.dart';
 import 'destination_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _HomeScreenState createState() => _HomeScreenState();
 }
-// ignore: library_private_types_in_public_api
+
 class _HomeScreenState extends State<HomeScreen> {
-  final ApiService _apiService = ApiService();
-  final TextEditingController _searchController = TextEditingController();
-  List<Destination> _destinations = [];
-  List<Destination> _filteredDestinations = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDestinations();
-    _searchController.addListener(() {
-      _filterDestinations(_searchController.text);
-    });
-  }
-
-  Future<void> _loadDestinations() async {
-    final destinations = await _apiService.fetchDestinations();
-    setState(() {
-      _destinations = destinations;
-      _filteredDestinations = destinations;
-    });
-  }
+  String _searchQuery = '';
+  List<Destination> _filteredDestinations = destinations;
 
   void _filterDestinations(String query) {
     setState(() {
-      _filteredDestinations = _destinations
-          .where((destination) =>
-          destination.name.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      _searchQuery = query.toLowerCase();
+      if (_searchQuery.isEmpty) {
+        _filteredDestinations = destinations;
+      } else {
+        _filteredDestinations = destinations.where((destination) {
+          // Extract region from imageUrls path (e.g., assets/nairobi/...)
+          final region = destination.imageUrls[0].split('/')[1].toLowerCase();
+          final title = destination.title.toLowerCase();
+          return region.contains(_searchQuery) || title.contains(_searchQuery);
+        }).toList();
+      }
     });
   }
 
@@ -53,12 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('NomadiQ'),
             const SizedBox(height: 4),
             Image.asset(
-                'assets/images/logo.png',
-                height: 20,
+              'assets/logo/nomadiq_logo.png',
+              height: 20,
               errorBuilder: (context, error, stackTrace) {
                 return const Icon(Icons.error, color: Colors.red, size: 20);
               },
-            ), // Replace with your logo asset
+            ),
           ],
         ),
         centerTitle: true,
@@ -68,27 +54,32 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search Destinations',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: 'Search by region or destination...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              onChanged: _filterDestinations,
             ),
           ),
           Expanded(
-            child: _destinations.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredDestinations.isEmpty && _searchController.text.isNotEmpty
-                ? const Center(child: Text('No results found'))
-                : ListView.builder(
-              padding: const EdgeInsets.all(16),
+            child: _filteredDestinations.isEmpty
+                ? const Center(child: Text('No destinations found.'))
+                : GridView.builder(
+              padding: const EdgeInsets.all(8.0),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 8.0,
+                mainAxisSpacing: 8.0,
+              ),
               itemCount: _filteredDestinations.length,
               itemBuilder: (context, index) {
                 final destination = _filteredDestinations[index];
                 return Card(
                   elevation: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: InkWell(
@@ -107,15 +98,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         ClipRRect(
                           borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(12)),
-                          child: Image.network(
-                            destination.imageUrl,
-                            height: 180,
+                          child: Image.asset(
+                            destination.imageUrls[0],
+                            height: 120,
                             width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Image.network(
-                                'https://via.placeholder.com/180',
-                                height: 180,
+                              return Image.asset(
+                                'assets/fallback.jpg',
+                                height: 120,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                               );
@@ -123,36 +114,37 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(8.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                destination.name,
+                                destination.title,
                                 style: const TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                destination.description,
-                                style: TextStyle(
-                                    fontSize: 14, color: Colors.grey[600]),
-                                maxLines: 2,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
                                   const Icon(Icons.star,
-                                      color: Colors.amber, size: 16),
+                                      size: 16, color: Colors.amber),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${destination.rating.toStringAsFixed(1)}/5',
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500),
+                                    '${destination.rating}',
+                                    style: const TextStyle(fontSize: 14),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                destination.description,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -160,9 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                ).animate()
-                    .fadeIn(duration: 500.ms, delay: (index * 100).ms)
-                    .slideX(
+                ).animate().fadeIn(duration: 500.ms, delay: (index * 100).ms).slideX(
                   begin: 0.2,
                   end: 0.0,
                   duration: 500.ms,

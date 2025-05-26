@@ -1,22 +1,55 @@
-name: nomadiq
+name: nomadiq_app
 description: "A Flutter app for exploring Kenyan tourist destinations."
 publish_to: 'none'
 version: 1.0.0+1
 environment:
   sdk: ^3.7.2
+
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.5
-  flutter_animate: ^4.2.0
-  cupertino_icons: ^1.0.2
+  http: ^1.2.2
+  flutter_animate: ^4.3.0
+  cupertino_icons: ^1.0.8
+  google_maps_flutter: ^2.6.1
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
 flutter:
   uses-material-design: true
-
-
-
+  assets:
+    - assets/fallback.jpg
+    - assets/nairobi/karura_forest/
+    - assets/nairobi/jeevanjee_gardens/  # Corrected from jeevanjee_garden to jeevanjee_gardens
+    - assets/nairobi/nairobi_national_park/
+    - assets/mombasa/bamburi_beach/
+    - assets/mombasa/diani_beach/
+    - assets/mombasa/nyali_beach/
+    - assets/mombasa/shimba_hills_national_reserve/
+    - assets/mombasa/tiwi_beach/
+    - assets/mombasa/tsavo_east_national_park/
+    - assets/mombasa/tsavo_west_national_park/
+    - assets/malindi/gedi_ruins/
+    - assets/malindi/marafa_depression/
+    - assets/malindi/watamu/
+    - assets/lamu/lamu_archipelago/
+    - assets/lamu/wasini_island/
+    - assets/narok/masai_mara_national_reserve/
+    - assets/naivasha/hells_gate_national_park/
+    - assets/naivasha/lake_naivasha/
+    - assets/nakuru/lake_nakuru_national_park/
+    - assets/nanyuki/mount_kenya_national_park/
+    - assets/nanyuki/olpepeta_conservancy/
+    - assets/nyeri/aberdare_national_park/
+    - assets/kajiado/amboseli_national_park/
+    - assets/kwale/chyulu_hills/
+    - assets/isiolo/samburu_national_reserve/
+    - assets/marsabit/lake_turkana/
+    - assets/marsabit/sibiloi_national_park/
+    - assets/kakamega/kakamega_forest_national_reserve/
+    - assets/kisumu/lake_victoria/  # Added based on your input
+    - assets/logo/

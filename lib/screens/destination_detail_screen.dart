@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../models/destination.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../data/destinations_data.dart';
 
 class DestinationDetailScreen extends StatefulWidget {
   final Destination destination;
@@ -8,79 +9,173 @@ class DestinationDetailScreen extends StatefulWidget {
   const DestinationDetailScreen({super.key, required this.destination});
 
   @override
-  // ignore: library_private_types_in_public_api
   _DestinationDetailScreenState createState() => _DestinationDetailScreenState();
 }
-// ignore: library_private_types_in_public_api
+
 class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
-  String _selectedBudget = 'Budget';
+  late PageController _pageController;
+  int _currentPage = 0;
+  late GoogleMapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _pageController.addListener(() {
+      setState(() {
+        _currentPage = _pageController.page?.round() ?? 0;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _mapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final tourPlan = widget.destination.tourPlans[_selectedBudget]!;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.destination.name),
-        actions: [
-          DropdownButton<String>(
-            value: _selectedBudget,
-            items: ['Budget', 'Mid-range', 'Luxury']
-                .map((budget) => DropdownMenuItem(
-              value: budget,
-              child: Text(budget),
-            ))
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedBudget = value!;
-              });
-            },
-          ),
-        ],
+        title: const Text('Destination Details'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              widget.destination.imageUrl,
+            // Image at the top
+            SizedBox(
+              height: 300,
+              child: PageView.builder(
+                scrollDirection: Axis.horizontal,
+                controller: _pageController,
+                itemCount: widget.destination.imageUrls.length,
+                itemBuilder: (context, index) {
+                  return Image.asset(
+                    widget.destination.imageUrls[index],
+                    height: 300,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/fallback.jpg',
+                        height: 300,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            // White dot indicators
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.destination.imageUrls.length,
+                      (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                    width: _currentPage == index ? 12.0 : 8.0,
+                    height: _currentPage == index ? 12.0 : 8.0,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentPage == index
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Google Map
+            SizedBox(
               height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.network(
-                  'https://via.placeholder.com/200',
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                );
-              },
-            ).animate().fadeIn(duration: 400.ms),
+              child: GoogleMap(
+                onMapCreated: (controller) {
+                  _mapController = controller;
+                },
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(widget.destination.latitude, widget.destination.longitude),
+                  zoom: 10,
+                ),
+                markers: {
+                  Marker(
+                    markerId: MarkerId(widget.destination.id),
+                    position: LatLng(widget.destination.latitude, widget.destination.longitude),
+                    infoWindow: InfoWindow(title: widget.destination.title),
+                  ),
+                },
+              ),
+            ),
+            // Open in Google Maps button
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () async {
+                  final url =
+                      'https://www.google.com/maps/search/?api=1&query=${widget.destination.latitude},${widget.destination.longitude}';
+                  if (await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(Uri.parse(url));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not launch Google Maps')),
+                    );
+                  }
+                },
+                child: const Text('Open in Google Maps'),
+              ),
+            ),
+            // Description and "Book Now" button
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.destination.name,
+                    widget.destination.title,
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ).animate().slideY(begin: 0.1, end: 0.0, duration: 300.ms),
+                  ),
                   const SizedBox(height: 8),
-                  Text(widget.destination.description)
-                      .animate()
-                      .fadeIn(duration: 400.ms),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, size: 20, color: Colors.amber),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${widget.destination.rating}',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
-                  Text('Location: ${widget.destination.location}')
-                      .animate()
-                      .fadeIn(duration: 400.ms),
-                  const SizedBox(height: 16),
                   Text(
-                    'Tour Plan (${_selectedBudget} - KSh ${tourPlan.budget.toStringAsFixed(0)}, ${tourPlan.duration} days)',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ).animate().fadeIn(duration: 400.ms),
-                  const SizedBox(height: 8),
-                  _buildTourPlanTable(tourPlan),
+                    widget.destination.description,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookingScreen(destination: widget.destination),
+                          ),
+                        );
+                      },
+                      child: const Text('Book Now'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -89,37 +184,23 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       ),
     );
   }
+}
 
-  Widget _buildTourPlanTable(TourPlan tourPlan) {
-    return Table(
-      border: TableBorder.all(color: Colors.grey[300]!),
-      columnWidths: const {
-        0: FlexColumnWidth(1),
-        1: FlexColumnWidth(2),
-      },
-      children: [
-        _buildTableRow('Accommodations', tourPlan.accommodations.join(', ')),
-        _buildTableRow('Dining', tourPlan.dining.join(', ')),
-        _buildTableRow('Entertainment', tourPlan.entertainment.join(', ')),
-      ],
-    ).animate().fadeIn(duration: 400.ms);
-  }
+// Placeholder BookingScreen
+class BookingScreen extends StatelessWidget {
+  final Destination destination;
 
-  TableRow _buildTableRow(String title, String content) {
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(content),
-        ),
-      ],
+  const BookingScreen({super.key, required this.destination});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Book ${destination.title}'),
+      ),
+      body: Center(
+        child: Text('Booking for ${destination.title} - Implementation pending.'),
+      ),
     );
   }
 }
