@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('NomadiQ'),
             const SizedBox(height: 4),
             Image.asset(
-              'assets/logo/nomadiq_logo.png',
+              'assets/logo/nomadiq_logo.jpg',
               height: 20,
               errorBuilder: (context, error, stackTrace) {
                 return const Icon(Icons.error, color: Colors.red, size: 20);
