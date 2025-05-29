@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/tour_plan_screen.dart';
 import 'screens/auth_screen.dart';
+import 'data/destinations_data.dart'; // Import the destinations data
 
 void main() {
   runApp(const NomadiQApp());
@@ -39,20 +40,76 @@ class MainScreen extends StatefulWidget {
   @override
   _MainScreenState createState() => _MainScreenState();
 }
+
 // ignore: library_private_types_in_public_api
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const BookingScreen(),
-    const TourPlanScreen(),
-    const AuthScreen(),
-  ];
+  Destination? _selectedDestination; // Track the selected destination
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeScreen(),
+      // Placeholder for BookingScreen, will be updated dynamically
+      Container(), // Placeholder until a destination is selected
+      const TourPlanScreen(),
+      const AuthScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      if (index == 1 && _selectedDestination == null) {
+        // If navigating to BookingScreen and no destination is selected, prompt to select one
+        _showDestinationSelection();
+      } else {
+        // Update the screens list only if a destination is selected
+        _updateScreens();
+      }
     });
+  }
+
+  void _updateScreens() {
+    setState(() {
+      if (_selectedDestination != null) {
+        _screens[1] = BookingScreen(destination: _selectedDestination!);
+      } else {
+        // If no destination is selected, show an error or placeholder
+        _screens[1] = const Center(child: Text('Please select a destination first.'));
+      }
+    });
+  }
+
+  void _showDestinationSelection() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select a Destination'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: destinations.map((dest) {
+                return ListTile(
+                  title: Text(dest.title),
+                  onTap: () {
+                    setState(() {
+                      _selectedDestination = dest;
+                      _updateScreens();
+                      Navigator.pop(context); // Close dialog
+                      _onItemTapped(1); // Navigate to BookingScreen
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override

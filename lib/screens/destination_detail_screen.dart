@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../data/destinations_data.dart';
+import 'booking_screen.dart'; // Import the new BookingScreen file
 
 class DestinationDetailScreen extends StatefulWidget {
   final Destination destination;
@@ -181,7 +185,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               ),
             ),
             // Margin between PageView and Google Map
-            const SizedBox(height: 16), // Added margin
+            const SizedBox(height: 16),
             // Google Map
             SizedBox(
               height: 200,
@@ -232,25 +236,6 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// Placeholder BookingScreen
-class BookingScreen extends StatelessWidget {
-  final Destination destination;
-
-  const BookingScreen({super.key, required this.destination});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Book ${destination.title}'),
-      ),
-      body: Center(
-        child: Text('Booking for ${destination.title} - Implementation pending.'),
       ),
     );
   }
